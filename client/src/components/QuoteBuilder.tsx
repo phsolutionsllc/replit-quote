@@ -32,8 +32,7 @@ const QuoteBuilder = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Condition[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [age, setAge] = useState<number | null>(null);
-  const [calculatedAge, setCalculatedAge] = useState<string>("");
+  const [manualAgeEntry, setManualAgeEntry] = useState<boolean>(false);
   const { register, handleSubmit, watch, setValue, formState } = useQuoteForm();
   const { toast } = useToast();
   
@@ -62,7 +61,7 @@ const QuoteBuilder = ({
   // Calculate age from birthday
   useEffect(() => {
     const birthday = watch("birthday");
-    if (birthday) {
+    if (birthday && !manualAgeEntry) {
       const birthDate = new Date(birthday);
       const today = new Date();
       let calculatedAge = today.getFullYear() - birthDate.getFullYear();
@@ -70,13 +69,13 @@ const QuoteBuilder = ({
       if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
         calculatedAge--;
       }
-      setAge(calculatedAge);
-      setCalculatedAge(`Age: ${calculatedAge}`);
-    } else {
-      setAge(null);
-      setCalculatedAge("");
+      
+      // Make sure it's a valid age
+      if (calculatedAge >= 18 && calculatedAge <= 99) {
+        setValue("age", calculatedAge);
+      }
     }
-  }, [watch("birthday")]);
+  }, [watch("birthday"), manualAgeEntry, setValue]);
 
   const termLength = watch("termLength") || "20";
   const uwClass = watch("underwritingClass") || "level";
@@ -99,6 +98,14 @@ const QuoteBuilder = ({
       return parseInt(numericValue, 10).toLocaleString();
     }
     return "";
+  };
+
+  // Handle age input - when user types age directly, disable birthday-to-age calculation
+  const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "");
+    const ageValue = parseInt(value) || 0;
+    setValue("age", ageValue);
+    setManualAgeEntry(true);
   };
 
   // Handle Condition Search
@@ -142,6 +149,16 @@ const QuoteBuilder = ({
   };
 
   const onFormSubmit = (data: any) => {
+    // Check if age is provided
+    if (!data.age) {
+      toast({
+        title: "Age Required",
+        description: "Please enter an age or date of birth",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Convert the face amount from formatted string to number
     const faceAmount = parseInt(data.faceAmount.replace(/,/g, ""), 10);
     
@@ -210,16 +227,38 @@ const QuoteBuilder = ({
               </div>
             </div>
             
-            <div>
-              <Label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
-                Date of Birth {calculatedAge && <span className="text-sm text-gray-500 ml-2">{calculatedAge}</span>}
-              </Label>
-              <Input
-                type="date"
-                id="birthday"
-                className="py-3"
-                {...register("birthday")}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
+                  Age
+                </Label>
+                <Input
+                  type="number"
+                  id="age"
+                  className="py-3"
+                  min="18"
+                  max="99"
+                  value={formValues.age || ""}
+                  onChange={handleAgeChange}
+                  placeholder="35"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
+                  Or Date of Birth
+                </Label>
+                <Input
+                  type="date"
+                  id="birthday"
+                  className="py-3"
+                  {...register("birthday")}
+                  onChange={(e) => {
+                    register("birthday").onChange(e);
+                    setManualAgeEntry(false);
+                  }}
+                />
+              </div>
             </div>
           </div>
           

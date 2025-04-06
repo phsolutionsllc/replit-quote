@@ -26,7 +26,7 @@ try {
 
 interface QuoteRequest {
   faceAmount: number;
-  birthday: string;
+  age: number;     // Using age directly instead of birthday
   gender: string;
   tobacco: string;
   termLength?: string;
@@ -44,7 +44,7 @@ export const getQuotes = async (req: Request, res: Response) => {
   try {
     const {
       faceAmount,
-      birthday,
+      age, // Using age directly from the request
       gender,
       tobacco,
       termLength,
@@ -53,15 +53,6 @@ export const getQuotes = async (req: Request, res: Response) => {
       quoteType,
       healthConditions,
     } = req.body as QuoteRequest;
-
-    // Calculate age from birthday
-    const birthDate = new Date(birthday);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
 
     console.log(`Processing quote request: Age=${age}, Gender=${gender}, FaceAmount=${faceAmount}, QuoteType=${quoteType}`);
     

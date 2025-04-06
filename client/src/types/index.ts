@@ -1,7 +1,8 @@
 // Quote Parameters
 export interface QuoteParameters {
   faceAmount: number;
-  birthday: string;
+  age: number;
+  birthday?: string; // Optional: used only for age calculation
   gender: string;
   tobacco: string;
   termLength?: string;

@@ -20,16 +20,22 @@ const Home = () => {
   const handleQuoteSubmit = async (parameters: QuoteParameters) => {
     setIsLoading(true);
     try {
+      // Create the request payload, making sure we send age instead of birthday
+      // Use destructuring to exclude the birthday field
+      const { birthday, ...payloadWithoutBirthday } = parameters;
+      
+      const requestPayload = {
+        ...payloadWithoutBirthday,
+        quoteType,
+        healthConditions,
+      };
+
       const response = await fetch("/api/quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...parameters,
-          quoteType,
-          healthConditions,
-        }),
+        body: JSON.stringify(requestPayload),
       });
       
       if (!response.ok) {

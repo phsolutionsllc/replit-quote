@@ -4,7 +4,8 @@ import { z } from "zod";
 
 const quoteFormSchema = z.object({
   faceAmount: z.string().min(1, "Face amount is required"),
-  birthday: z.string().min(1, "Date of birth is required"),
+  age: z.number().min(18, "Age must be at least 18").max(99, "Age must be 99 or less").or(z.string().transform(val => parseInt(val) || 0)),
+  birthday: z.string().optional(), // Optional since we can calculate age from birthday
   gender: z.enum(["male", "female"]),
   tobacco: z.enum(["yes", "no"]),
   termLength: z.string().optional(), // Optional for FEX quotes
@@ -19,6 +20,7 @@ export const useQuoteForm = () => {
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
       faceAmount: "100,000",
+      age: 35, // Default age
       gender: "male",
       tobacco: "no",
       termLength: "20",
