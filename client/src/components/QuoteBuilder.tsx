@@ -31,6 +31,9 @@ const QuoteBuilder = ({
 }: QuoteBuilderProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Condition[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [age, setAge] = useState<number | null>(null);
+  const [calculatedAge, setCalculatedAge] = useState<string>("");
   const { register, handleSubmit, watch, setValue, formState } = useQuoteForm();
   const { toast } = useToast();
   
@@ -41,6 +44,39 @@ const QuoteBuilder = ({
   const { data: conditions = [] } = useQuery({
     queryKey: ["/api/conditions"],
   });
+  
+  // Auto-suggestions for health conditions
+  useEffect(() => {
+    if (searchTerm.length >= 2 && conditions && Array.isArray(conditions)) {
+      const results = conditions.filter((condition: any) =>
+        condition.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setSearchResults(results.slice(0, 10)); // Limit to 10 results for better UX
+      setShowSuggestions(results.length > 0);
+    } else {
+      setSearchResults([]);
+      setShowSuggestions(false);
+    }
+  }, [searchTerm, conditions]);
+  
+  // Calculate age from birthday
+  useEffect(() => {
+    const birthday = watch("birthday");
+    if (birthday) {
+      const birthDate = new Date(birthday);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      setAge(calculatedAge);
+      setCalculatedAge(`Age: ${calculatedAge}`);
+    } else {
+      setAge(null);
+      setCalculatedAge("");
+    }
+  }, [watch("birthday")]);
 
   const termLength = watch("termLength") || "20";
   const uwClass = watch("underwritingClass") || "level";
@@ -75,31 +111,37 @@ const QuoteBuilder = ({
       return;
     }
 
-    const results = conditions.filter((condition) =>
-      condition.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (conditions && Array.isArray(conditions)) {
+      const results = conditions.filter((condition: any) =>
+        condition.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
-    setSearchResults(results);
+      setSearchResults(results);
 
-    if (results.length === 0) {
-      toast({
-        title: "No Results",
-        description: "No matching health conditions found",
-      });
-    } else if (results.length === 1) {
-      // If only one result, select it automatically
-      onConditionSelect(results[0]);
+      if (results.length === 0) {
+        toast({
+          title: "No Results",
+          description: "No matching health conditions found",
+        });
+      } else if (results.length === 1) {
+        // If only one result, select it automatically
+        onConditionSelect(results[0]);
+      } else {
+        // Show multiple results for selection
+        toast({
+          title: "Multiple Results",
+          description: "Please click on a condition to select it",
+        });
+      }
     } else {
-      // Show multiple results for selection
-      // This would be better with a dropdown, but we'll keep it simple
       toast({
-        title: "Multiple Results",
-        description: "Please click on a condition to select it",
+        title: "Error",
+        description: "Unable to search conditions at this time",
       });
     }
   };
 
-  const onFormSubmit = (data: QuoteParameters) => {
+  const onFormSubmit = (data: any) => {
     // Convert the face amount from formatted string to number
     const faceAmount = parseInt(data.faceAmount.replace(/,/g, ""), 10);
     
@@ -170,7 +212,7 @@ const QuoteBuilder = ({
             
             <div>
               <Label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
-                Date of Birth
+                Date of Birth {calculatedAge && <span className="text-sm text-gray-500 ml-2">{calculatedAge}</span>}
               </Label>
               <Input
                 type="date"
@@ -244,7 +286,7 @@ const QuoteBuilder = ({
             <div className="animate-fadeIn">
               <span className="block text-sm font-medium text-gray-700 mb-3">FEX UW Classes</span>
               <div className="flex flex-wrap gap-2">
-                {["level", "graded/modified", "limited pay"].map((uwClassOption) => (
+                {["level", "graded/modified", "guaranteed", "limited pay"].map((uwClassOption) => (
                   <Button
                     key={uwClassOption}
                     type="button"
@@ -332,7 +374,7 @@ const QuoteBuilder = ({
                       className="ml-1 focus:outline-none"
                       onClick={() => onRemoveCondition(condition.id)}
                     >
-                      <span className="material-icons text-sm">close</span>
+                      <span className="material-icons text-sm">×</span>
                     </button>
                   </div>
                 ))}
@@ -350,7 +392,7 @@ const QuoteBuilder = ({
               className="focus:ring-primary focus:border-primary block w-full py-3 pl-3 pr-10 text-base border-gray-300 rounded-md"
               {...register("state")}
             >
-              {states.map((state) => (
+              {Array.isArray(states) && states.map((state: any) => (
                 <option key={state.code} value={state.code}>
                   {state.name}
                 </option>

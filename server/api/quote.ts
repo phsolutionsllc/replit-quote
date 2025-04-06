@@ -222,25 +222,30 @@ function generateQuotes({
   // This would normally query a premium database or API
   // For now, we'll generate some sample quotes
   
-  const quotes = eligibleCarriers.map(carrier => {
-    // Basic premium calculation (this would be replaced by actual premium data)
-    const basePremium = faceAmount / 1000 * 0.1;
-    const ageFactor = age / 50;
+  const quotes = eligibleCarriers.map((carrier, index) => {
+    // Enhanced premium calculation with individualized rates
+    // Base premium varies by carrier and has slight variation
+    const basePremium = faceAmount / 1000 * (0.1 + (index * 0.01));
+    const ageFactor = Math.max(1.0, age / 35); // More realistic age impact
     const genderFactor = gender === "male" ? 1.2 : 1.0;
-    const tobaccoFactor = tobacco === "yes" ? 1.5 : 1.0;
+    const tobaccoFactor = tobacco === "yes" ? 1.8 : 1.0;
     
     let termFactor = 1.0;
     if (quoteType === "term" && termLength) {
-      termFactor = parseInt(termLength) / 10;
+      // Longer terms are more expensive
+      termFactor = (parseInt(termLength) / 10) * 1.2;
     }
     
     let uwFactor = 1.0;
     if (quoteType === "fex" && underwritingClass) {
       uwFactor = underwritingClass === "level" ? 1.0 :
-                underwritingClass === "graded/modified" ? 1.3 : 1.5;
+                underwritingClass === "graded/modified" ? 1.3 :
+                underwritingClass === "guaranteed" ? 1.8 : 1.5; // Higher factor for guaranteed issue
     }
     
-    const monthlyPremium = basePremium * ageFactor * genderFactor * tobaccoFactor * termFactor * uwFactor;
+    // Create more realistic variations in premium
+    const baseVariation = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1 variation factor
+    const monthlyPremium = basePremium * ageFactor * genderFactor * tobaccoFactor * termFactor * uwFactor * baseVariation;
     const annualPremium = monthlyPremium * 12;
     
     // Determine plan name and benefits
@@ -257,19 +262,24 @@ function generateQuotes({
     } else {
       planName = `${carrier} Final Expense`;
       tierName = underwritingClass === "level" ? "Level" :
-                underwritingClass === "graded/modified" ? "Graded" : "Limited Pay";
+                underwritingClass === "graded/modified" ? "Graded" : 
+                underwritingClass === "guaranteed" ? "Guaranteed Issue" : "Limited Pay";
       benefits = [
         "Terminal Illness",
         ...(Math.random() > 0.6 ? ["Confined Care"] : []),
+        ...(underwritingClass === "guaranteed" ? ["No Health Questions"] : []),
       ];
     }
+    
+    // Log premium calculation factors for debugging
+    console.log(`Quote for ${carrier}: Age=${age}, Gender=${gender}, FaceAmount=${faceAmount}, Term=${termLength || 'N/A'}`);
     
     return {
       carrier,
       planName,
       tierName,
-      monthlyPremium,
-      annualPremium,
+      monthlyPremium: parseFloat(monthlyPremium.toFixed(2)),  // Round to 2 decimal places
+      annualPremium: parseFloat((monthlyPremium * 12).toFixed(2)),
       benefits,
     };
   });
