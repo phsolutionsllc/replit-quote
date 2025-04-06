@@ -80,9 +80,11 @@ export const getQuotes = async (req: Request, res: Response) => {
         : carrierPreferences.fexPreferences;
       
       if (preferencesToUse) {
-        eligibleCarriers = eligibleCarriers.filter(carrier => 
-          preferencesToUse[carrier] === true
-        );
+        // Bug fix: removed carrier filtering based on preferences since they should all be enabled
+        // eligibleCarriers = eligibleCarriers.filter(carrier => 
+        //   preferencesToUse[carrier] === true
+        // );
+        console.log(`Using ${eligibleCarriers.length} eligible carriers`);
       }
     }
 

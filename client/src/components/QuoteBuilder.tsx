@@ -109,7 +109,7 @@ const QuoteBuilder = ({
   };
 
   // Handle Condition Search
-  const handleConditionSearch = () => {
+  const handleConditionSearch = async () => {
     if (!searchTerm.trim()) {
       toast({
         title: "Search Required",
@@ -118,11 +118,17 @@ const QuoteBuilder = ({
       return;
     }
 
-    if (conditions && Array.isArray(conditions)) {
-      const results = conditions.filter((condition: any) =>
-        condition.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
+    try {
+      // Use the server's search endpoint instead of client-side filtering
+      const response = await fetch(`/api/conditions/search?query=${encodeURIComponent(searchTerm)}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to search conditions");
+      }
+      
+      const results = await response.json();
+      console.log(`Found ${results.length} conditions matching "${searchTerm}"`);
+      
       setSearchResults(results);
 
       if (results.length === 0) {
@@ -133,17 +139,19 @@ const QuoteBuilder = ({
       } else if (results.length === 1) {
         // If only one result, select it automatically
         onConditionSelect(results[0]);
-      } else {
+      } else if (results.length > 0) {
         // Show multiple results for selection
         toast({
           title: "Multiple Results",
           description: "Please click on a condition to select it",
         });
       }
-    } else {
+    } catch (error) {
+      console.error("Error searching conditions:", error);
       toast({
         title: "Error",
         description: "Unable to search conditions at this time",
+        variant: "destructive",
       });
     }
   };

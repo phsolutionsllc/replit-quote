@@ -14,7 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Condition endpoints
   app.get("/api/conditions", getConditions);
-  app.get("/api/conditions/search", searchConditions);
+  app.get("/api/conditions/search", searchConditions);  // This must come before the :id route
   app.get("/api/conditions/:id", getConditionById);
   
   // Carrier endpoints
