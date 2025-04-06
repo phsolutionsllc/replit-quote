@@ -41,7 +41,8 @@ const QuoteBuilder = ({
   });
   
   const { data: conditions = [] } = useQuery({
-    queryKey: ["/api/conditions"],
+    queryKey: ["/api/conditions", quoteType],
+    queryFn: () => fetch(`/api/conditions?quoteType=${quoteType}`).then(res => res.json()),
   });
   
   // Auto-suggestions for health conditions
@@ -108,7 +109,7 @@ const QuoteBuilder = ({
     setManualAgeEntry(true);
   };
 
-  // Handle Condition Search
+  // Handle Condition Search - following the original eligibility.js approach
   const handleConditionSearch = async () => {
     if (!searchTerm.trim()) {
       toast({
@@ -119,15 +120,17 @@ const QuoteBuilder = ({
     }
 
     try {
-      // Use the server's search endpoint instead of client-side filtering
-      const response = await fetch(`/api/conditions/search?query=${encodeURIComponent(searchTerm)}`);
+      // Use the server's search endpoint with the current quoteType
+      const response = await fetch(
+        `/api/conditions/search?query=${encodeURIComponent(searchTerm)}&quoteType=${quoteType}`
+      );
       
       if (!response.ok) {
         throw new Error("Failed to search conditions");
       }
       
       const results = await response.json();
-      console.log(`Found ${results.length} conditions matching "${searchTerm}"`);
+      console.log(`Found ${results.length} conditions matching "${searchTerm}" for ${quoteType}`);
       
       setSearchResults(results);
 

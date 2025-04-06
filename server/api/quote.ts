@@ -73,20 +73,52 @@ export const getQuotes = async (req: Request, res: Response) => {
       ? JSON.parse(req.headers["x-carrier-preferences"] as string)
       : null;
 
-    // Filter out carriers based on preferences
-    if (carrierPreferences) {
-      const preferencesToUse = quoteType === "term" 
-        ? carrierPreferences.termPreferences 
-        : carrierPreferences.fexPreferences;
+    // Get all carrier names from the JSON data directly, like in the original app.py
+    if (quoteType === "term") {
+      console.log(`Loading all carriers from Term JSON data`);
+      const allTermCarriers = new Set<string>();
       
-      if (preferencesToUse) {
-        // Bug fix: removed carrier filtering based on preferences since they should all be enabled
-        // eligibleCarriers = eligibleCarriers.filter(carrier => 
-        //   preferencesToUse[carrier] === true
-        // );
-        console.log(`Using ${eligibleCarriers.length} eligible carriers`);
+      // Collect all unique carrier names from the Term JSON data
+      if (termData?.Term?.Conditions) {
+        Object.values(termData.Term.Conditions).forEach((condition: any) => {
+          if (condition.finalResults) {
+            condition.finalResults.forEach((finalResult: any) => {
+              if (finalResult.underwriting) {
+                finalResult.underwriting.forEach((uw: any) => {
+                  if (uw.company) allTermCarriers.add(uw.company);
+                });
+              }
+            });
+          }
+        });
       }
+      
+      // Use all carriers from the term data without filtering
+      eligibleCarriers = Array.from(allTermCarriers);
+    } else {
+      console.log(`Loading all carriers from FEX JSON data`);
+      const allFexCarriers = new Set<string>();
+      
+      // Collect all unique carrier names from the FEX JSON data
+      if (fexData?.FEX?.Conditions) {
+        Object.values(fexData.FEX.Conditions).forEach((condition: any) => {
+          if (condition.finalResults) {
+            condition.finalResults.forEach((finalResult: any) => {
+              if (finalResult.underwriting) {
+                finalResult.underwriting.forEach((uw: any) => {
+                  if (uw.company) allFexCarriers.add(uw.company);
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      // Use all carriers from the FEX data without filtering
+      eligibleCarriers = Array.from(allFexCarriers);
     }
+    
+    console.log(`Using all ${eligibleCarriers.length} carriers for ${quoteType} quotes`);
 
     // Get quotes from the JSON data for eligible carriers
     const quotes = getQuotesFromJson({
