@@ -11,49 +11,73 @@ let fexData: any = {};
 
 try {
   termData = JSON.parse(fs.readFileSync(termFile, "utf8"));
+  console.log("Successfully loaded Term conditions:", Object.keys(termData.Term.Conditions).length);
 } catch (error) {
   console.error("Error loading term data:", error);
 }
 
 try {
   fexData = JSON.parse(fs.readFileSync(fexFile, "utf8"));
+  console.log("Successfully loaded FEX conditions:", Object.keys(fexData.FEX.Conditions).length);
 } catch (error) {
   console.error("Error loading fex data:", error);
+}
+
+// Define condition type
+interface Condition {
+  id: string;
+  name: string;
+  type: "term" | "fex" | "both";
+  questions: any[];
 }
 
 // Get all available conditions
 export const getConditions = (req: Request, res: Response) => {
   try {
-    const conditions = [];
+    const conditions: Condition[] = [];
     
-    // Get Term conditions
-    for (const conditionName in termData.Term.Conditions) {
-      conditions.push({
-        id: `term-${conditionName.replace(/\s+/g, "-").toLowerCase()}`,
-        name: conditionName,
-        type: "term",
-        questions: termData.Term.Conditions[conditionName].questions,
+    // Process Term conditions
+    if (termData && termData.Term && termData.Term.Conditions) {
+      const termConditions = termData.Term.Conditions;
+      Object.keys(termConditions).forEach(conditionName => {
+        const conditionData = termConditions[conditionName];
+        if (conditionData && conditionData.questions) {
+          conditions.push({
+            id: `term-${conditionName.toLowerCase().replace(/\s+/g, "-")}`,
+            name: conditionName,
+            type: "term",
+            questions: conditionData.questions,
+          });
+        }
       });
     }
     
-    // Get FEX conditions
-    for (const conditionName in fexData.FEX.Conditions) {
-      // Check if this condition is already in the list from Term
-      const existingCondition = conditions.find(c => c.name === conditionName);
-      
-      if (existingCondition) {
-        // Condition exists in both Term and FEX
-        existingCondition.type = "both";
-      } else {
-        conditions.push({
-          id: `fex-${conditionName.replace(/\s+/g, "-").toLowerCase()}`,
-          name: conditionName,
-          type: "fex",
-          questions: fexData.FEX.Conditions[conditionName].questions,
-        });
-      }
+    // Process FEX conditions
+    if (fexData && fexData.FEX && fexData.FEX.Conditions) {
+      const fexConditions = fexData.FEX.Conditions;
+      Object.keys(fexConditions).forEach(conditionName => {
+        const conditionData = fexConditions[conditionName];
+        if (conditionData && conditionData.questions) {
+          // Check if this condition already exists in the list (from Term)
+          const existingIndex = conditions.findIndex(c => c.name === conditionName);
+          
+          if (existingIndex >= 0) {
+            // Update existing condition to be of type "both"
+            conditions[existingIndex].type = "both";
+          } else {
+            // Add new FEX-only condition
+            conditions.push({
+              id: `fex-${conditionName.toLowerCase().replace(/\s+/g, "-")}`,
+              name: conditionName,
+              type: "fex",
+              questions: conditionData.questions,
+            });
+          }
+        }
+      });
     }
     
+    console.log(`Returning ${conditions.length} conditions`);
     res.json(conditions);
   } catch (error) {
     console.error("Error getting conditions:", error);
@@ -65,45 +89,43 @@ export const getConditions = (req: Request, res: Response) => {
 export const getConditionById = (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const [type, conditionSlug] = id.split("-");
+    const [type, ...parts] = id.split("-");
+    const conditionSlug = parts.join("-");
     
-    // Convert slug back to condition name
-    const conditionNameWords = conditionSlug.split("-").map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    );
+    // Find the condition in the appropriate data structure
+    const dataSource = type === "term" ? termData.Term.Conditions : fexData.FEX.Conditions;
+    let foundCondition = null;
     
-    // Try different name variations to match the condition
-    let condition = null;
-    let data = type === "term" ? termData.Term.Conditions : fexData.FEX.Conditions;
-    
-    // Check exact name match
-    const conditionName = conditionNameWords.join(" ");
-    if (data[conditionName]) {
-      condition = {
-        id,
-        name: conditionName,
-        type,
-        questions: data[conditionName].questions,
-      };
+    // Try to find the condition by matching the slug with the name
+    for (const name in dataSource) {
+      if (name.toLowerCase().replace(/\s+/g, "-") === conditionSlug) {
+        foundCondition = {
+          id,
+          name,
+          type,
+          questions: dataSource[name].questions,
+        };
+        break;
+      }
     }
     
-    // If not found, try iterating through all condition names to find a partial match
-    if (!condition) {
-      for (const name in data) {
+    // If we couldn't find an exact match, try a partial match
+    if (!foundCondition) {
+      for (const name in dataSource) {
         if (name.toLowerCase().includes(conditionSlug.replace(/-/g, " "))) {
-          condition = {
+          foundCondition = {
             id,
             name,
             type,
-            questions: data[name].questions,
+            questions: dataSource[name].questions,
           };
           break;
         }
       }
     }
     
-    if (condition) {
-      res.json(condition);
+    if (foundCondition) {
+      res.json(foundCondition);
     } else {
       res.status(404).json({ error: "Condition not found" });
     }
@@ -122,45 +144,47 @@ export const searchConditions = (req: Request, res: Response) => {
       return res.status(400).json({ error: "Search query is required" });
     }
     
-    const conditions = [];
-    const searchTerms = query.toLowerCase().split(" ");
+    const searchQuery = query.toLowerCase();
+    const conditions: Condition[] = [];
     
-    // Search Term conditions
-    for (const conditionName in termData.Term.Conditions) {
-      const lowerName = conditionName.toLowerCase();
-      
-      if (searchTerms.every(term => lowerName.includes(term))) {
-        conditions.push({
-          id: `term-${conditionName.replace(/\s+/g, "-").toLowerCase()}`,
-          name: conditionName,
-          type: "term",
-          questions: termData.Term.Conditions[conditionName].questions,
-        });
-      }
-    }
-    
-    // Search FEX conditions
-    for (const conditionName in fexData.FEX.Conditions) {
-      const lowerName = conditionName.toLowerCase();
-      
-      if (searchTerms.every(term => lowerName.includes(term))) {
-        // Check if this condition is already in the list from Term
-        const existingCondition = conditions.find(c => c.name === conditionName);
-        
-        if (existingCondition) {
-          // Condition exists in both Term and FEX
-          existingCondition.type = "both";
-        } else {
+    // Search in Term conditions
+    if (termData && termData.Term && termData.Term.Conditions) {
+      Object.keys(termData.Term.Conditions).forEach(name => {
+        if (name.toLowerCase().includes(searchQuery)) {
           conditions.push({
-            id: `fex-${conditionName.replace(/\s+/g, "-").toLowerCase()}`,
-            name: conditionName,
-            type: "fex",
-            questions: fexData.FEX.Conditions[conditionName].questions,
+            id: `term-${name.toLowerCase().replace(/\s+/g, "-")}`,
+            name,
+            type: "term",
+            questions: termData.Term.Conditions[name].questions,
           });
         }
-      }
+      });
     }
     
+    // Search in FEX conditions
+    if (fexData && fexData.FEX && fexData.FEX.Conditions) {
+      Object.keys(fexData.FEX.Conditions).forEach(name => {
+        if (name.toLowerCase().includes(searchQuery)) {
+          // Check if this condition already exists in the list (from Term)
+          const existingIndex = conditions.findIndex(c => c.name === name);
+          
+          if (existingIndex >= 0) {
+            // Update existing condition to be of type "both"
+            conditions[existingIndex].type = "both";
+          } else {
+            // Add new FEX-only condition
+            conditions.push({
+              id: `fex-${name.toLowerCase().replace(/\s+/g, "-")}`,
+              name,
+              type: "fex",
+              questions: fexData.FEX.Conditions[name].questions,
+            });
+          }
+        }
+      });
+    }
+    
+    console.log(`Found ${conditions.length} conditions matching "${query}"`);
     res.json(conditions);
   } catch (error) {
     console.error("Error searching conditions:", error);
