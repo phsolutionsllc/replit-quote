@@ -1,0 +1,496 @@
+{
+  "Term": {
+    "Conditions": {
+      "ADHD": {
+        "questions": [
+          {
+            "id": "q1",
+            "questionText": "Date of last treatment?",
+            "questionType": "date",
+            "answers": [
+              {
+                "value": "Under 10 years ago",
+                "nextQuestionId": "q2"
+              },
+              {
+                "value": "Over 10 years ago",
+                "nextQuestionId": "q2"
+              }
+            ]
+          },
+          {
+            "id": "q2",
+            "questionText": "Would this condition be characterized as mild, requiring nothing more than low dose medications to treat?",
+            "questionType": "yesNo",
+            "answers": [
+              {
+                "value": "Yes",
+                "nextQuestionId": "q3"
+              },
+              {
+                "value": "No",
+                "nextQuestionId": "final3"
+              }
+            ]
+          },
+          {
+            "id": "q3",
+            "questionText": "Does the prospect have any other mental health disorders?",
+            "questionType": "yesNo",
+            "answers": [
+              {
+                "value": "Yes",
+                "nextQuestionId": "final1"
+              },
+              {
+                "value": "No",
+                "nextQuestionId": "final2"
+              }
+            ]
+          }
+        ],
+        "finalResults": [
+          {
+            "id": "final1",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Standard 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Payment Protector",
+                "planName": "Payment Protector 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Approved",
+                "planName": "Your Term 20-Year Non-Med",
+                "planInfo": "Family Health Benefit, Terminal Illness, Critical Illness, Chronic Illness"
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Decline",
+                "reason": "If ever treated for ADHD, Decline",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              }
+            ]
+          },
+          {
+            "id": "final2",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Preferred",
+                "planName": "Preferred 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Payment Protector",
+                "planName": "Payment Protector 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Approved",
+                "planName": "Your Term 20-Year Non-Med",
+                "planInfo": "Family Health Benefit, Terminal Illness, Critical Illness, Chronic Illness"
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Approved",
+                "planName": "Term Life Express 20-Year",
+                "planInfo": "Terminal Illness, Critical Illness, Chronic Illness"
+              }
+            ]
+          },
+          {
+            "id": "final3",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Decline",
+                "reason": "ADHD not mild or requiring more than low dose medications",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Decline",
+                "reason": "ADHD not mild or requiring more than low dose medications",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Decline",
+                "reason": "ADHD not mild or requiring more than low dose medications",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Decline",
+                "reason": "ADHD not mild or requiring more than low dose medications",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              }
+            ]
+          }
+        ]
+      },
+      "Anxiety": {
+        "questions": [
+          {
+            "id": "q1",
+            "questionText": "Date of diagnosis?",
+            "questionType": "date",
+            "answers": [
+              {
+                "value": "Under 5 years ago",
+                "nextQuestionId": "q2"
+              },
+              {
+                "value": "Over 5 years ago",
+                "nextQuestionId": "q2"
+              }
+            ]
+          },
+          {
+            "id": "q2",
+            "questionText": "Is the condition currently stable with medication?",
+            "questionType": "yesNo",
+            "answers": [
+              {
+                "value": "Yes",
+                "nextQuestionId": "q3"
+              },
+              {
+                "value": "No",
+                "nextQuestionId": "final3"
+              }
+            ]
+          },
+          {
+            "id": "q3",
+            "questionText": "Any hospitalizations for this condition?",
+            "questionType": "yesNo",
+            "answers": [
+              {
+                "value": "Yes",
+                "nextQuestionId": "final1"
+              },
+              {
+                "value": "No",
+                "nextQuestionId": "final2"
+              }
+            ]
+          }
+        ],
+        "finalResults": [
+          {
+            "id": "final1",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Standard 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Decline",
+                "reason": "History of hospitalization for anxiety",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Your Term 20-Year Non-Med",
+                "planInfo": "Family Health Benefit, Terminal Illness, Critical Illness, Chronic Illness"
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Decline",
+                "reason": "History of hospitalization for anxiety",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              }
+            ]
+          },
+          {
+            "id": "final2",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Preferred",
+                "planName": "Preferred 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Payment Protector",
+                "planName": "Payment Protector 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Preferred",
+                "planName": "Your Term 20-Year Non-Med",
+                "planInfo": "Family Health Benefit, Terminal Illness, Critical Illness, Chronic Illness"
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Preferred",
+                "planName": "Term Life Express 20-Year",
+                "planInfo": "Terminal Illness, Critical Illness, Chronic Illness"
+              }
+            ]
+          },
+          {
+            "id": "final3",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Decline",
+                "reason": "Anxiety not stable with medication",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Decline",
+                "reason": "Anxiety not stable with medication",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Decline",
+                "reason": "Anxiety not stable with medication",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Decline",
+                "reason": "Anxiety not stable with medication",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              }
+            ]
+          }
+        ]
+      },
+      "Diabetes": {
+        "questions": [
+          {
+            "id": "q1",
+            "questionText": "Age at diagnosis?",
+            "questionType": "text",
+            "answers": [
+              {
+                "value": "Under 30",
+                "nextQuestionId": "final3"
+              },
+              {
+                "value": "30-50",
+                "nextQuestionId": "q2"
+              },
+              {
+                "value": "Over 50",
+                "nextQuestionId": "q2"
+              }
+            ]
+          },
+          {
+            "id": "q2",
+            "questionText": "Is the condition well-controlled with A1C under 7.0?",
+            "questionType": "yesNo",
+            "answers": [
+              {
+                "value": "Yes",
+                "nextQuestionId": "q3"
+              },
+              {
+                "value": "No",
+                "nextQuestionId": "final1"
+              }
+            ]
+          },
+          {
+            "id": "q3",
+            "questionText": "Any complications (neuropathy, retinopathy, etc)?",
+            "questionType": "yesNo",
+            "answers": [
+              {
+                "value": "Yes",
+                "nextQuestionId": "final1"
+              },
+              {
+                "value": "No",
+                "nextQuestionId": "final2"
+              }
+            ]
+          }
+        ],
+        "finalResults": [
+          {
+            "id": "final1",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Standard 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Payment Protector 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Decline",
+                "reason": "Uncontrolled diabetes or with complications",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Decline",
+                "reason": "Uncontrolled diabetes or with complications",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              }
+            ]
+          },
+          {
+            "id": "final2",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Preferred",
+                "planName": "Preferred 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Preferred",
+                "planName": "Payment Protector 20-Year",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Your Term 20-Year Non-Med",
+                "planInfo": "Family Health Benefit, Terminal Illness, Critical Illness, Chronic Illness"
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Approved",
+                "reason": "",
+                "tierName": "Standard",
+                "planName": "Term Life Express 20-Year",
+                "planInfo": "Terminal Illness, Critical Illness, Chronic Illness"
+              }
+            ]
+          },
+          {
+            "id": "final3",
+            "underwriting": [
+              {
+                "company": "InstaBrain (Term)",
+                "status": "Decline",
+                "reason": "Diabetes diagnosed under age 30",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Americo (Payment Protector)",
+                "status": "Decline",
+                "reason": "Diabetes diagnosed under age 30",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Foresters (Your Term)",
+                "status": "Decline",
+                "reason": "Diabetes diagnosed under age 30",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              },
+              {
+                "company": "Mutual of Omaha (Term Life Express)",
+                "status": "Decline",
+                "reason": "Diabetes diagnosed under age 30",
+                "tierName": "",
+                "planName": "",
+                "planInfo": ""
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
