@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <table border="1">
+        <tr>
+            <th>Face Amount</th>
+            <th>Sex</th>
+            <th>State</th>
+            <th>Age</th>
+            <th>Tobacco</th>
+            <th>Underwriting Class</th>
+            <th>Company</th>
+            <th>Plan Name</th>
+            <th>Tier Name</th>
+            <th>Monthly Rate</th>
+            <th>Annual Rate</th>
+            <th>Warnings</th>
+        </tr>
+        {% for result in results %}
+        <tr>
+            <td>{{ result[1] }}</td> <!-- Skip the first column (id) -->
+            <td>{{ result[2] }}</td>
+            <td>{{ result[3] }}</td>
+            <td>{{ result[4] }}</td>
+            <td>{{ result[5] }}</td>
+            <td>{{ result[6] }}</td>
+            <td>{{ result[7] }}</td>
+            <td>{{ result[8] }}</td>
+            <td>{{ result[9] }}</td>
+            <td>{{ result[10] }}</td>
+            <td>{{ result[11] }}</td>
+            <td>{{ result[12] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/">Back to search</a>
+</body>
+</html> 

@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Launch Quotes</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            text-align: center; /* Center-align all text */
+        }
+
+        .copy-quote {
+            display: inline-block;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size:20px;
+        }
+
+        .display-eapp {
+            cursor: pointer;
+        }
+
+        .small-image {
+            width: 20px;
+            height: 20px;
+        }
+        .custom-select {
+            width: 150px; /* Set the desired width */
+            text-align: center; /* Center the text */
+            padding: 8px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .quote-bar {
+            display: flex;
+            justify-content: space-between;
+            background-color: rgb(6,57,112);
+            border-radius: 8px;
+            margin-top: 10px;
+            padding: 5px;
+        }
+
+        .quote-bar select {
+            padding: 10px 15px;
+            background-color: rgb(6,57,112);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .options {
+            display: none;
+        }
+
+        .options.active {
+            display: block;
+        }
+
+        .options button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: transparent;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .options button.selected {
+            background-color: rgb(6,57,112);
+            color: white;
+        }
+
+        td img {
+            width: 175px;
+            height: auto;
+        }
+
+        th {
+            background-color: rgb(6,57,112);
+            color: white; 
+        }
+
+        td, th {
+            padding: 20px; 
+        }
+
+        :root {
+            margin: 0;
+            line-height: inherit;
+        }
+
+        .auto-margin-left {
+            margin-left: auto;
+        }
+
+        #snackbar {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: fixed;
+            z-index: 9999;
+            font-size: 14px;
+            min-width: 100px;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.5s linear;
+        }
+
+        #snackbar.show {
+            visibility: visible !important;
+            animation: fadein 0.5s, fadeout 0.5s 1.5s;
+            opacity: 1 !important;
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -80%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -100%);
+            }
+        }
+
+        .custom-button {
+            border-width: 0;
+            border-style: solid;
+            background-color: transparent;
+            background-image: none;
+            cursor: pointer;
+            margin: .5rem;
+            min-width: 80px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.5rem;
+            padding: .75rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgba(194, 17, 17, 0.1);
+            transition-property: all;
+            transition-duration: .15s;
+            transition-timing-function: cubic-bezier(.4,0,1,1);
+            border-color: rgb(226 232 240 / var(--tw-border-opacity));
+            color: rgb(112 112 112 / var(--tw-text-opacity));
+            outline-width: 2px;
+        }
+
+        .custom-button:hover,
+        .custom-button:focus {
+            background-color: rgb(6,57,112);
+            outline: none;
+            box-shadow: 0 0 0 4px rgb(6,57,112);
+            color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
+        }
+
+        .custom-button.selected {
+            background-color: rgb(6,57,112);
+            outline: none;
+            box-shadow: none;
+            color: rgb(255, 255, 255) !important;
+        }
+
+        .custom-button.search-btn {
+            background-color: rgb(255, 204, 0) !important;
+            border-width: 0;
+            box-shadow: rgb(255, 204, 0) !important;
+            color: rgb(255, 255, 255) !important;
+            width: 10%;
+        }
+
+        .button-group-horizontal {
+            display: flex;
+            justify-content: center; 
+            gap: 10px; 
+        }
+
+        @media (max-width: 768px) {
+            .flex-wrap {
+                flex-direction: column;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .flex-wrap {
+                flex-direction: row;
+            }
+        }
+
+        .custom-button.search-btn:hover,
+        .custom-button.search-btn:focus {
+            background-color: rgb(230, 184, 0) !important;
+            outline: none;
+            border-width: 0;
+            box-shadow: rgb(230, 184, 0) !important;
+            color: rgb(255, 255, 255) !important;
+        }
+
+
+        .input-box {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .birthday-shadow {            
+            height: 40px;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .birthday-shadow:focus {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 
+                        0 2px 4px rgba(0, 0, 0, 0.06);
+            outline: none;
+            border-color: rgb(99, 102, 241);
+            transform: translateY(-1px);
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; 
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        th, td {
+            border: none; 
+        }
+
+        thead tr {
+            height: 60px !important;
+            border-radius: 10rem;
+        }
+
+        thead th {
+            padding: 0 20px;
+            vertical-align: middle;
+        }
+
+        tbody td {
+            height: 125px !important;
+            background-color: white;
+            border: none !important;
+        }
+
+        tr {
+            border-bottom: 1px solid #ddd; 
+            height: 125px;
+        }
+
+        tr:last-child {
+            border-bottom: none; 
+        }
+        thead tr th:first-child {
+            border-top-left-radius: 0.5rem;
+            border-bottom-left-radius: 0.5rem;
+        }
+
+        thead tr th:last-child {
+            border-top-right-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+        }
+
+        .copy-quote {
+            display: inline-block;
+            cursor: pointer;
+            font-size: 20px; 
+        }
+
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-semibold text-center mb-8">Agent Launch Quoting Tool</h1>
+        <form action="/" method="post" class="bg-white p-6 rounded-lg shadow-md" onsubmit="return checkFormSubmission()">
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_2px_1fr] gap-6">
+                <!-- Left Section for Inputs -->
+                <div class="flex flex-col space-y-5">
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <div class="flex flex-col items-center">
+                    <label for="quote-type" class="block text-gray-700 font-bold text-center">Quote Type</label>
+                    <select id="quote-type" name="quote-type" onchange="selectType(this.value)" class="mt-1 block text-center px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 custom-select">
+                      <option value="term" {% if request.form.get('quote-type') == 'term' %}selected{% endif %}>TERM</option>
+                      <option value="fex" {% if request.form.get('quote-type') == 'fex' %}selected{% endif %}>FEX</option>
+                    </select>
+                  </div>
+                </div>
+                    <!-- Hidden Input to Determine Selected Database -->
+                    <input type="hidden" id="selected-database" name="database" value="{{ request.form.get('database', 'term') }}">
+
+                    <!-- Hidden Input to Determine Selected Underwriting Class -->
+                    <input type="hidden" id="underwriting-class" name="underwriting_class" value="{{ request.form.get('underwriting_class', '') }}">
+
+                    <!-- Hidden Input to Determine Selected Term Length -->
+                    <input type="hidden" id="term-length" name="term_length" value="{{ request.form.get('term_length', '') }}">
+
+                    <!-- Face Amount -->
+                    <div>
+                        <label for="face_amount" class="block text-gray-700 font-bold">Face Amount:</label>
+                        <input
+                            type="text"
+                            id="face_amount"
+                            name="face_amount"
+                            class="w-1/2 text-center px-3 py-2 border rounded"
+                            placeholder="Enter face amount"
+                            autocomplete="off"
+                            oninput="liveFormatFaceAmount()"
+                            onblur="finalizeFaceAmount()"
+                            value="{{ face_amount if face_amount else '' }}"
+                        />
+                    </div>
+
+                    <!-- Term Length Options -->
+                    <div id="termOptions" class="options active col-span-2">
+                        <p class="font-bold">Term Length Options:</p>
+                        <div>
+                            <button type="button" onclick="selectOption(this, 'term', 10)" class="custom-button {% if request.form.get('term_length') == '10' %}selected{% endif %}">10</button>
+                            <button type="button" onclick="selectOption(this, 'term', 15)" class="custom-button {% if request.form.get('term_length') == '15' %}selected{% endif %}">15</button>
+                            <button type="button" onclick="selectOption(this, 'term', 20)" class="custom-button {% if request.form.get('term_length') == '20' %}selected{% endif %}">20</button>
+                            <button type="button" onclick="selectOption(this, 'term', 25)" class="custom-button {% if request.form.get('term_length') == '25' %}selected{% endif %}">25</button>
+                            <button type="button" onclick="selectOption(this, 'term', 30)" class="custom-button {% if request.form.get('term_length') == '30' %}selected{% endif %}">30</button>
+                        </div>
+                    </div>
+
+                    <!-- FEX UW Classes -->
+                    <div id="fexOptions" class="options col-span-2">
+                        <p>FEX UW Classes:</p>
+                        <div>
+                            <button type="button" onclick="selectOption(this, 'fex', 'level')" class="custom-button {% if request.form.get('underwriting_class') == 'level' %}selected{% endif %}">Level</button>
+                            <button type="button" onclick="selectOption(this, 'fex', 'graded/modified')" class="custom-button {% if request.form.get('underwriting_class') == 'graded/modified' %}selected{% endif %}">Graded/Modified</button>
+                            <button type="button" onclick="selectOption(this, 'fex', 'limited pay')" class="custom-button {% if request.form.get('underwriting_class') == 'limited pay' %}selected{% endif %}">Limited Pay</button>
+                            <button type="button" onclick="selectOption(this, 'fex', 'guaranteed')" class="custom-button {% if request.form.get('underwriting_class') == 'guaranteed' %}selected{% endif %}">Guaranteed</button>
+                        </div>
+                    </div>
+
+                     <!-- Sex and Tobacco -->
+                     <div class="flex flex-wrap gap-4 items-center justify-center">                         
+                        <!-- Sex --> 
+                        <div class="flex flex-col items-center">
+                             <label for="sex" class="block text-gray-700 text-center font-bold mb-2">Sex</label>
+                             <div class="flex flex-nowrap gap-2 justify-center">
+                                 <button
+                                     type="button"
+                                     onclick="selectOption(this, 'sex', 'Male')"
+                                     class="custom-button {% if sex == 'Male' %}selected{% endif %}"
+                                 >
+                                     Male
+                                 </button>
+                                 <button
+                                     type="button"
+                                     onclick="selectOption(this, 'sex', 'Female')"
+                                     class="custom-button {% if sex == 'Female' %}selected{% endif %}"
+                                 >
+                                     Female
+                                 </button>
+                             </div>
+                             <input type="hidden" id="sex" name="sex" value="{{ sex if sex else 'Male' }}">
+                         </div>
+
+                         <!-- Tobacco -->
+                         <div class="flex flex-col items-center">
+                             <label for="tobacco" class="block text-gray-700 text-center font-bold mb-2">Tobacco</label>
+                             <div class="flex flex-nowrap gap-2 justify-center">
+                                 <button
+                                     type="button"
+                                     onclick="selectOption(this, 'tobacco', 'None')"
+                                     class="custom-button {% if tobacco == 'None' %}selected{% endif %}"
+                                 >
+                                     None
+                                 </button>
+                                 <button
+                                     type="button"
+                                     onclick="selectOption(this, 'tobacco', 'Cigarettes')"
+                                     class="custom-button {% if tobacco == 'Cigarettes' %}selected{% endif %}"
+                                 >
+                                     Cigarettes
+                                 </button>
+                             </div>
+                             <input type="hidden" id="tobacco" name="tobacco" value="{{ tobacco if tobacco else 'None' }}">
+                         </div>
+                     </div>
+
+                    <!-- Birthday and Age -->
+                    <div class="col-span-2">
+                        <!-- Remove the empty <label> if it's not needed -->
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-2">
+                        <!-- 1) Label / Title -->
+                        <span class="font-bold">Birthday</span>
+                    
+                        <!-- 2) The 3 date inputs in one row -->
+                        <div class="flex space-x-2">
+                            <input type="text" id="month" placeholder="MM" maxlength="2"
+                                class="itk-input w-16 px-0 text-center birthday-shadow" autocomplete="off">
+                            <input type="text" id="day" placeholder="DD" maxlength="2"
+                                class="itk-input w-16 px-0 text-center birthday-shadow" autocomplete="off">
+                            <input type="text" id="year" placeholder="YYYY" minlength="4" maxlength="4"
+                                class="itk-input w-20 px-0 text-center birthday-shadow" autocomplete="off">
+                        </div>
+                    
+                        <!-- 3) 'or' and Age on the same line -->
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold">or</span>
+                            <input
+                            type="number"
+                            id="age"
+                            placeholder="age"
+                            name="age"
+                            value="{{ age if age else '' }}"
+                            required
+                            class="block w-24 text-center px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            autocomplete="off"
+                            />
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- State Selector -->
+                    <div class="col-span-2">
+                        <label for="state" class="block text-gray-700 font-bold">State</label>
+                        <select id="state" name="state" class="mt-1 block w-1/2 mx-auto text-center px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">                            <option value="AL">Alabama</option>
+                            <option value="AK">Alaska</option>
+                            <option value="AZ">Arizona</option>
+                            <option value="AR">Arkansas</option>
+                            <option value="CA">California</option>
+                            <option value="CO">Colorado</option>
+                            <option value="CT">Connecticut</option>
+                            <option value="DE">Delaware</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="HI">Hawaii</option>
+                            <option value="ID">Idaho</option>
+                            <option value="IL">Illinois</option>
+                            <option value="IN">Indiana</option>
+                            <option value="IA">Iowa</option>
+                            <option value="KS">Kansas</option>
+                            <option value="KY">Kentucky</option>
+                            <option value="LA">Louisiana</option>
+                            <option value="ME">Maine</option>
+                            <option value="MD">Maryland</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="MI">Michigan</option>
+                            <option value="MN">Minnesota</option>
+                            <option value="MS">Mississippi</option>
+                            <option value="MO">Missouri</option>
+                            <option value="MT">Montana</option>
+                            <option value="NE">Nebraska</option>
+                            <option value="NV">Nevada</option>
+                            <option value="NH">New Hampshire</option>
+                            <option value="NJ">New Jersey</option>
+                            <option value="NM">New Mexico</option>
+                            <option value="NY">New York</option>
+                            <option value="NC">North Carolina</option>
+                            <option value="ND">North Dakota</option>
+                            <option value="OH">Ohio</option>
+                            <option value="OK">Oklahoma</option>
+                            <option value="OR">Oregon</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="RI">Rhode Island</option>
+                            <option value="SC">South Carolina</option>
+                            <option value="SD">South Dakota</option>
+                            <option value="TN">Tennessee</option>
+                            <option value="TX">Texas</option>
+                            <option value="UT">Utah</option>
+                            <option value="VT">Vermont</option>
+                            <option value="VA">Virginia</option>
+                            <option value="WA">Washington</option>
+                            <option value="WV">West Virginia</option>
+                            <option value="WI">Wisconsin</option>
+                            <option value="WY">Wyoming</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Middle Bar -->
+                <div class="middle-bar bg-gray-300 w-[2px] hidden md:block"></div>
+
+                <!-- Right Section for Medical and Prescription Info -->
+                <div>
+                    <div id="eligibilityChecker"></div>
+                </div>
+            </div>
+
+            <!-- Hidden Inputs for Medical Data -->
+            <input type="hidden" id="medical_conditions" name="medical_conditions" value='{{ medical_conditions|tojson|safe }}'>
+            <input type="hidden" id="medical_responses" name="medical_responses" value='{{ medical_responses|tojson|safe }}'>
+            <input type="hidden" id="locationID" name="locationID" value="{{ location_id if location_id else '' }}">
+            <!-- Submit Button -->
+            <div class="col-span-2">
+                <button type="submit" class="mt-4 w-full custom-button search-btn text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2">Search</button>
+            </div>
+            <div id="carrierFilterRoot"></div>
+        </form>
+
+        
+        <!-- Display Results Section -->
+        {% if results %}
+        <h2 class="text-2xl font-semibold text-center mt-8 mb-4">Results</h2>
+        <div class="overflow-x-auto">
+        <table class="min-w-full border-separate border-spacing-y-3">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4">Carrier</th>
+                    <th class="py-2 px-4">Policy</th>
+                    <th class="py-2 px-4">Monthly Price</th>
+                    <th class="py-2 px-4">Additional Information</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                  {% set monthly_price = result[10]|string %}
+                  {% if monthly_price != 'None' and monthly_price|trim != '' %}
+                    <tr class="bg-white shadow-md rounded-lg">
+                      <td class="py-4 px-4 border-0">
+                        {% if result[13] %}
+                          <img src="http://quotes.agentlaunch.ai{{ result[13] }}" alt="{{ result[7] }} logo" width="125">
+                        {% else %}
+                          <img src="http://quotes.agentlaunch.ai/logos/aetna.png" alt="No logo available" width="125">
+                        {% endif %}
+                      </td>
+                      <td class="py-4 px-4 border-0">
+                        <div>{{ result[8] }}</div>
+                      </td>
+                      <td class="py-4 px-4 border-0">
+                        {% if result|length > 15 and result[15] and 'Decline' in result[15]|string %}
+                          <span class="text-red-500">Decline</span>
+                        {% else %}
+                          {{ monthly_price }}
+                        {% endif %}
+                      </td>
+                      <td class="py-4 px-4 border-0">
+                        <!-- Additional Information & Buttons -->
+                        <div class="flex flex-wrap items-center justify-center gap-2 w-full">
+                          {% if 'Decline' in result[15]|string %}
+                            <div class="tooltip inline-block">
+                              <button type="button" class="text-white bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-4 focus:ring-yellow-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:focus:ring-yellow-900">
+                                Info
+                              </button>
+                              <span class="tooltiptext">{{ result[16] }}</span>
+                            </div>
+                          {% elif result[12] and result[12] != 'None' %}
+                            <div class="tooltip inline-block">
+                              <button type="button" class="text-white bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-4 focus:ring-yellow-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:focus:ring-yellow-900">
+                                Info
+                              </button>
+                              <span class="tooltiptext">{{ result[12] }}</span>
+                            </div>
+                          {% endif %}
+                          <button
+                            type="button"
+                            class="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                            onclick='copyQuote("{{ result[7] }}", "{{ result[8] }}", "{{ monthly_price }}", "{{ result[1] }}", "{{ result[2] }}", "{{ result[3] }}", "{{ result[4] }}", "{{ result[5] }}", "{{ result[6] }}", "{{ result[12] }}", event)'
+                          >
+                            Copy Quote
+                          </button>
+                          {% if result[14] and result[14] != 'None' %}
+                            <button
+                              type="button"
+                              class="text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                              onclick="displayEapp('{{ result[14] }}')"
+                            >
+                              E-App
+                            </button>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+                </tbody>
+        </table>
+        </div>
+        {% else %}
+            <p class="text-center mt-4">No results found.</p>
+        {% endif %}
+        
+    </div>
+
+    <div id="spinner" class="spinner hidden">
+        <img src="/home/ubuntu/scribe/quote/logos/agentlaunch.png" alt="Loading...">
+    </div>
+
+    <span id="snackbar">Quote Copied!</span>
+
+    <script>
+        if (window.top === window.self) {
+            window.location = 'https://quotes.agentlaunch.ai';
+        }
+
+        function copyQuote(company, policy, rate, faceAmount, sex, state, age, tobacco, underwritingClass, additionalInfo, event) {
+            const quoteText = `Company: ${company}
+Policy: ${policy}
+Monthly Rate: ${rate}
+Face Amount: ${faceAmount}
+Sex: ${sex}
+State: ${state}
+Age: ${age}
+Tobacco: ${tobacco}
+Underwriting Class: ${underwritingClass}
+Additional Info: ${additionalInfo}`.trim();
+
+            const textarea = document.createElement('textarea');
+            textarea.value = quoteText;
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                const snackbar = document.getElementById('snackbar');
+                const clickedElement = event.target;
+                const rect = clickedElement.getBoundingClientRect();
+
+                snackbar.style.position = 'fixed';
+                snackbar.style.left = `${rect.left + (rect.width/2)}px`;
+                snackbar.style.top = `${rect.top - 10}px`;
+                snackbar.style.transform = 'translate(-50%, -100%)';
+
+                snackbar.className = "show";
+                setTimeout(() => snackbar.classList.remove("show"), 2000);
+            } catch(err) {
+                console.error('Could not copy text:', err);
+            } finally {
+                document.body.removeChild(textarea);    
+            }
+        }
+
+        function displayEapp(url) {
+            if (url && url !== 'None') {
+                window.open(url, '_blank');
+            } else {
+                alert('No eApp URL available for this quote.');
+            }
+        }
+
+        function selectType(type) {
+            const termOptions = document.getElementById('termOptions');
+            const fexOptions = document.getElementById('fexOptions');
+            const selectedDatabase = document.getElementById('selected-database');
+            const termLengthInput = document.getElementById('term-length');
+            const underwritingClassInput = document.getElementById('underwriting-class');
+
+            if (type === 'term') {
+                termOptions.classList.add('active');
+                fexOptions.classList.remove('active');
+                selectedDatabase.value = 'term';
+                termLengthInput.disabled = false;
+                underwritingClassInput.disabled = true;
+            } else {
+                termOptions.classList.remove('active');
+                fexOptions.classList.add('active');
+                selectedDatabase.value = 'fex';
+                termLengthInput.disabled = true;
+                underwritingClassInput.disabled = false;
+            }
+        }
+
+        
+        function finalizeFaceAmount() {
+          const faceAmountInput = document.getElementById('face_amount');
+          // Remove all non-digit characters
+          let numericVal = faceAmountInput.value.replace(/[^\d]/g, '');
+          if (!numericVal) {
+            faceAmountInput.value = '';
+            return;
+          }
+
+          // Convert to number and round to nearest thousand
+          let faceAmount = parseInt(numericVal, 10);
+          faceAmount = Math.round(faceAmount / 1000) * 1000;
+
+          // Format as US currency with no decimals
+          faceAmountInput.value = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(faceAmount);
+        }
+
+        function liveFormatFaceAmount() {
+          const faceAmountInput = document.getElementById('face_amount');
+          let numericVal = faceAmountInput.value.replace(/[^\d]/g, '');
+
+          if (!numericVal) {
+            faceAmountInput.value = '';
+            return;
+          }
+
+          // Convert to a number, but do NOT round yet
+          let faceAmount = parseInt(numericVal, 10);
+
+          // Display partial currency formatting ($ + commas)
+          faceAmountInput.value = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(faceAmount);
+        }
+
+        function selectOption(button, type, value) {
+            let group;
+
+            if (type === 'sex') {
+                group = document.querySelectorAll('button[onclick*="sex"]');
+            } else if (type === 'tobacco') {
+                group = document.querySelectorAll('button[onclick*="tobacco"]');
+            } else if (type === 'fex') {
+                group = document.querySelectorAll('button[onclick*="fex"]');
+            } else if (type === 'term') {
+                group = document.querySelectorAll('button[onclick*="term"]');
+            }
+
+            group.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+
+            if (type === 'sex') {
+                document.getElementById('sex').value = value;
+            } else if (type === 'tobacco') {
+                document.getElementById('tobacco').value = value;
+            } else if (type === 'fex') {
+                document.getElementById('underwriting-class').value = value;
+                document.getElementById('term-length').value = "";
+            } else if (type === 'term') {
+                document.getElementById('term-length').value = value;
+                document.getElementById('underwriting-class').value = "";
+            }
+        }
+
+        function checkFormSubmission() {
+    const selectedDatabase = document.getElementById('selected-database').value;
+    const termLengthInput = document.getElementById('term-length');
+    const underwritingClassInput = document.getElementById('underwriting-class');
+
+    if (selectedDatabase === 'term') {
+        underwritingClassInput.disabled = true;
+        termLengthInput.disabled = false;
+    } else {
+        underwritingClassInput.disabled = false;
+        termLengthInput.disabled = true;
+    }
+
+    // Retrieve completedConditions from global scope
+    const completedConditions = window.completedConditions || {};
+
+    // Debug log the actual data structure
+    console.log("Submitting medical conditions:", JSON.stringify(completedConditions, null, 2));
+
+    // Debug log the locationID
+    console.log("Submitting with locationID=", document.getElementById('locationID').value);
+
+    // Update hidden inputs
+    document.getElementById('medical_conditions').value = JSON.stringify(completedConditions);
+    document.getElementById('medical_responses').value = JSON.stringify(completedConditions);
+
+    // Remove any currency formatting from face_amount so the backend receives only the numeric value
+    const faceAmountInput = document.getElementById('face_amount');
+    faceAmountInput.value = faceAmountInput.value.replace(/[^\d]/g, '');
+    return true; // Allow form submission
+}
+
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    selectType('{{ request.form.get("quote-type", "term") }}');
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Re-hydrate window.completedConditions from the hidden input
+    const savedJSON = document.getElementById('medical_conditions').value;
+    try {
+      window.completedConditions = JSON.parse(savedJSON);
+      console.log("Rehydrated window.completedConditions:", window.completedConditions);
+    } catch (e) {
+      window.completedConditions = {};
+      console.warn("Could not parse saved medical conditions:", e);
+    }
+    // If there's an initial face amount value, immediately show it with currency formatting
+    const faceAmountInput = document.getElementById('face_amount');
+    if (faceAmountInput.value.trim() !== '') {
+        finalizeFaceAmount();
+    }
+    const monthInput = document.getElementById('month');
+    const dayInput = document.getElementById('day');
+    const yearInput = document.getElementById('year');
+    const ageInput = document.getElementById('age');
+    const form = document.querySelector('form');
+
+    function calculateAge() {
+        const month = parseInt(monthInput.value, 10);
+        const day = parseInt(dayInput.value, 10);
+        const year = parseInt(yearInput.value, 10);
+
+        if (!isNaN(month) && !isNaN(day) && !isNaN(year)) {
+            const today = new Date();
+            const birthDate = new Date(year, month - 1, day);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            ageInput.value = age;
+            ageInput.disabled = true;
+        }
+    }
+
+    function lockBirthdayFields() {
+        monthInput.disabled = true;
+        dayInput.disabled = true;
+        yearInput.disabled = true;
+    }
+
+    function unlockBirthdayFields() {
+        monthInput.disabled = false;
+        dayInput.disabled = false;
+        yearInput.disabled = false;
+    }
+
+    // Existing input listeners for birthday fields
+    [monthInput, dayInput, yearInput].forEach(input => {
+        input.addEventListener('input', function() {
+            if (monthInput.value || dayInput.value || yearInput.value) {
+                ageInput.disabled = true;
+            } else {
+                ageInput.disabled = false;
+            }
+            calculateAge();
+        });
+    });
+
+    // ---- New Auto-Advance Functionality ----
+    monthInput.addEventListener('input', function(e) {
+      if (e.target.value.length === e.target.maxLength) {
+        dayInput.focus();
+      }
+    });
+
+    dayInput.addEventListener('input', function(e) {
+      if (e.target.value.length === e.target.maxLength) {
+        yearInput.focus();
+      }
+    });
+    // ----------------------------------------
+
+    ageInput.addEventListener('input', function() {
+        if (ageInput.value) {
+            lockBirthdayFields();
+            ageInput.disabled = false;
+        } else {
+            unlockBirthdayFields();
+        }
+    });
+
+    form.addEventListener('submit', function(event) {
+        if (!ageInput.value) {
+            event.preventDefault();
+            alert('Please enter a valid age.');
+            return;
+        }
+        ageInput.disabled = false;
+        lockBirthdayFields();
+    });
+
+    form.addEventListener('reset', function() {
+        ageInput.disabled = false;
+        unlockBirthdayFields();
+        ageInput.value = '';
+    });
+});
+    </script>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel" src="/static/js/carrier-filter.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="text/babel" src="/static/js/eligibility.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const hiddenField = document.getElementById('locationID');
+          const serverVal = hiddenField.value.trim();
+          const params = new URLSearchParams(window.location.search);
+          const queryVal = (params.get('locationID') || '').trim();
+
+          // Only overwrite if the queryVal is longer
+          if (queryVal.length > serverVal.length) {
+            hiddenField.value = queryVal;
+          }
+        });
+    </script>
+</body>
+</html>
