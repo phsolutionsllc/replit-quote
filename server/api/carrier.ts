@@ -46,7 +46,7 @@ export const getCarriers = (req: Request, res: Response) => {
     });
     
     // Combine carriers into a single list with type information
-    const carriers = [];
+    const carriers: Array<{id: string; name: string; type: "term" | "fex" | "both"}> = [];
     
     // Add Term-only carriers
     Array.from(termCarriers).forEach(carrierName => {
