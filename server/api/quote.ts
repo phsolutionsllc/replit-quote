@@ -95,6 +95,7 @@ export const getQuotes = async (req: Request, res: Response) => {
       
       // Use all carriers from the term data without filtering
       eligibleCarriers = Array.from(allTermCarriers);
+      console.log(`Found ${eligibleCarriers.length} TERM carriers:`, eligibleCarriers);
     } else {
       console.log(`Loading all carriers from FEX JSON data`);
       const allFexCarriers = new Set<string>();
@@ -116,6 +117,7 @@ export const getQuotes = async (req: Request, res: Response) => {
       
       // Use all carriers from the FEX data without filtering
       eligibleCarriers = Array.from(allFexCarriers);
+      console.log(`Found ${eligibleCarriers.length} FEX carriers:`, eligibleCarriers);
     }
     
     console.log(`Using all ${eligibleCarriers.length} carriers for ${quoteType} quotes`);
@@ -305,18 +307,31 @@ function getQuotesFromJson({
         monthlyRate *= 2.2;
       }
       
-      // Add carrier-specific variation
-      const randomVariation = 0.85 + (Math.random() * 0.3); // 15% lower to 30% higher
-      monthlyRate *= randomVariation;
+      // Use a consistent carrier-specific variation based on carrier name
+      const carrierVariation: Record<string, number> = {
+        "Mutual of Omaha (Term Life Express)": 0.85,
+        "Foresters (Your Term)": 0.92,
+        "InstaBrain (Term)": 0.95,
+        "Americo (Payment Protector)": 1.0
+      };
+      
+      // Use consistent variation factor instead of random
+      const variationFactor = carrierVariation[carrier] || 1.0;
+      monthlyRate *= variationFactor;
       
       // Create plan name and tier
       planName = `${carrier} ${termLength}-Year Term`;
       tierName = tobacco === "yes" ? "Tobacco" : "Preferred";
-      benefits = [
-        "Terminal Illness Rider",
-        ...(Math.random() > 0.5 ? ["Critical Illness Rider"] : []),
-        ...(Math.random() > 0.7 ? ["Chronic Illness Rider"] : []),
-      ];
+      
+      // Use fixed benefits instead of random
+      const carrierBenefits: Record<string, string[]> = {
+        "Mutual of Omaha (Term Life Express)": ["Terminal Illness Rider", "Critical Illness Rider"],
+        "Foresters (Your Term)": ["Terminal Illness Rider", "Critical Illness Rider", "Chronic Illness Rider"],
+        "InstaBrain (Term)": ["Terminal Illness Rider", "Critical Illness Rider"],
+        "Americo (Payment Protector)": ["Terminal Illness Rider"]
+      };
+      
+      benefits = carrierBenefits[carrier] || ["Terminal Illness Rider"];
     } 
     else { // FEX quotes
       // Calculate realistic FEX rates for age
@@ -346,20 +361,35 @@ function getQuotesFromJson({
         monthlyRate *= 1.6; // FEX generally has lower tobacco penalties than term
       }
       
-      // Add carrier-specific variation
-      const randomVariation = 0.9 + (Math.random() * 0.2); 
-      monthlyRate *= randomVariation;
+      // Use a consistent carrier-specific variation based on carrier name
+      const carrierVariation: Record<string, number> = {
+        "Royal Neighbors": 0.88,
+        "Prosperity Life": 0.94,
+        "Mutual of Omaha": 1.0
+      };
+      
+      // Use consistent variation factor instead of random
+      const variationFactor = carrierVariation[carrier] || 1.0;
+      monthlyRate *= variationFactor;
       
       // Create plan name and tier
       planName = `${carrier} Final Expense`;
       tierName = underwritingClass === "level" ? "Level Benefit" :
                underwritingClass === "graded/modified" ? "Graded Benefit" : 
                underwritingClass === "guaranteed" ? "Guaranteed Issue" : "Limited Pay";
-      benefits = [
-        "Funeral Planning",
-        ...(Math.random() > 0.6 ? ["Family Support Services"] : []),
-        ...(underwritingClass === "guaranteed" ? ["No Health Questions"] : []),
-      ];
+               
+      // Use fixed benefits instead of random
+      const carrierBenefits: Record<string, string[]> = {
+        "Royal Neighbors": ["Funeral Planning", "Family Support Services"],
+        "Prosperity Life": ["Funeral Planning"],
+        "Mutual of Omaha": ["Funeral Planning", "Family Support Services"]
+      };
+      
+      // Add "No Health Questions" for guaranteed issue
+      benefits = carrierBenefits[carrier] || ["Funeral Planning"];
+      if (underwritingClass === "guaranteed") {
+        benefits.push("No Health Questions");
+      }
     }
     
     // Add to quotes array with rounded values

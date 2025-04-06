@@ -174,11 +174,25 @@ export const searchConditions = (req: Request, res: Response) => {
     
     // Log more details about what was found
     if (matchedConditions.length > 0) {
+      // Extract carrier information from the first condition for debugging
+      const carriers = new Set<string>();
+      
+      if (matchedConditions[0].finalResults) {
+        matchedConditions[0].finalResults.forEach((finalResult: any) => {
+          if (finalResult.underwriting) {
+            finalResult.underwriting.forEach((uw: any) => {
+              if (uw.company) carriers.add(uw.company);
+            });
+          }
+        });
+      }
+      
       console.log("First matching condition:", {
         name: matchedConditions[0].name,
         type: matchedConditions[0].type,
         questions: matchedConditions[0].questions.length,
-        finalResults: matchedConditions[0].finalResults.length
+        finalResults: matchedConditions[0].finalResults.length,
+        carriers: Array.from(carriers)
       });
     }
     
