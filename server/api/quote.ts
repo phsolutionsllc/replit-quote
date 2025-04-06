@@ -84,9 +84,15 @@ export const getQuotes = async (req: Request, res: Response) => {
 
     // Filter out carriers based on preferences
     if (carrierPreferences) {
-      eligibleCarriers = eligibleCarriers.filter(carrier => 
-        carrierPreferences[carrier] === true
-      );
+      const preferencesToUse = quoteType === "term" 
+        ? carrierPreferences.termPreferences 
+        : carrierPreferences.fexPreferences;
+      
+      if (preferencesToUse) {
+        eligibleCarriers = eligibleCarriers.filter(carrier => 
+          preferencesToUse[carrier] === true
+        );
+      }
     }
 
     // Get quotes from the JSON data for eligible carriers
