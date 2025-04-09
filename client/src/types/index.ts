@@ -1,6 +1,6 @@
 // Quote Parameters
 export interface QuoteParameters {
-  faceAmount: number;
+  faceAmount: number | string;  // Can be a string with commas like "100,000"
   age: number;
   birthday?: string; // Optional: used only for age calculation
   gender: string;
@@ -26,7 +26,9 @@ export interface ConditionQuestion {
 export interface Condition {
   id: string;
   name: string;
+  type?: "term" | "fex" | "both";
   questions: ConditionQuestion[];
+  finalResults?: any[];
   answers?: Record<string, string>;
 }
 
@@ -39,7 +41,8 @@ export interface Quote {
   annualPremium: number;
   benefits?: string[];
   decline?: boolean;
-  declineReason?: string;
+  declineReason?: string | null;
+  eapp?: string | null;  // E-App URL from the database
 }
 
 // Carrier Types

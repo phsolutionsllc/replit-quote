@@ -3,8 +3,8 @@ import fs from "fs";
 import path from "path";
 
 // Load condition data - exact same paths as in the original app.py
-const termFile = path.join(import.meta.dirname, "../../attached_assets/fixed_termsheet.json");
-const fexFile = path.join(import.meta.dirname, "../../attached_assets/fixed_fexsheet.json");
+const termFile = path.join(import.meta.dirname, "../../attached_assets/termsheet.json");
+const fexFile = path.join(import.meta.dirname, "../../attached_assets/fexsheet.json");
 
 let termData: any = {};
 let fexData: any = {};

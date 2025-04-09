@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { createIndexes } from './db-setup';
+import { getDedicatedClient } from './db';
 
 const app = express();
 app.use(express.json());
@@ -54,6 +56,27 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     serveStatic(app);
+  }
+
+  // Run database setup
+  try {
+    console.log('Setting up database indexes...');
+    await createIndexes();
+    console.log('Database setup completed successfully.');
+  } catch (error) {
+    console.error('Database setup failed:', error);
+    // Continue with server startup despite index creation failure
+  }
+
+  // Initialize dedicated database connection - now with a blocking await
+  try {
+    console.log('Establishing dedicated database connection...');
+    // Block server startup until we have a connection
+    await getDedicatedClient();
+    console.log('Dedicated database connection established successfully.');
+  } catch (error) {
+    console.error('Failed to establish dedicated database connection:', error);
+    console.log('Server will attempt to establish connection on first query.');
   }
 
   // ALWAYS serve the app on port 5000

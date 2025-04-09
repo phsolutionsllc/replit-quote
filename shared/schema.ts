@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -44,6 +44,44 @@ export const carrierPreferences = pgTable("carrier_preferences", {
   userId: integer("user_id").references(() => users.id).notNull(),
   carrierId: integer("carrier_id").references(() => carriers.id).notNull(),
   isPreferred: boolean("is_preferred").default(true).notNull(),
+});
+
+// Term Quotes table
+export const termQuotes = pgTable("term", {
+  id: serial("id").primaryKey(),
+  faceAmount: integer("face_amount").notNull(),
+  sex: text("sex").notNull(),
+  termLength: text("term_length").notNull(),
+  state: text("state").notNull(),
+  age: integer("age").notNull(),
+  tobacco: text("tobacco").notNull(),
+  company: text("company").notNull(),
+  planName: text("plan_name").notNull(),
+  tierName: text("tier_name").notNull(),
+  monthlyRate: decimal("monthly_rate").notNull(),
+  annualRate: decimal("annual_rate").notNull(),
+  warnings: text("warnings"),
+  logoUrl: text("logo_url"),
+  eapp: text("eapp"),
+});
+
+// FEX Quotes table
+export const fexQuotes = pgTable("fex", {
+  id: serial("id").primaryKey(),
+  faceAmount: integer("face_amount").notNull(),
+  sex: text("sex").notNull(),
+  state: text("state").notNull(),
+  age: integer("age").notNull(),
+  tobacco: text("tobacco").notNull(),
+  underwritingClass: text("underwriting_class").notNull(),
+  company: text("company").notNull(),
+  planName: text("plan_name").notNull(),
+  tierName: text("tier_name").notNull(),
+  monthlyRate: decimal("monthly_rate").notNull(),
+  annualRate: decimal("annual_rate").notNull(),
+  warnings: text("warnings"),
+  logoUrl: text("logo_url"),
+  eapp: text("eapp"),
 });
 
 // Schemas for insert operations

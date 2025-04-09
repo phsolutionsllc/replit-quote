@@ -1,410 +1,236 @@
-import type { Request, Response } from "express";
-import { db } from "../db";
-import fs from "fs";
-import path from "path";
-
-// Load term and fex data from JSON files
-const termFile = path.join(import.meta.dirname, "../../attached_assets/fixed_termsheet.json");
-const fexFile = path.join(import.meta.dirname, "../../attached_assets/fixed_fexsheet.json");
-
-let termData: any = {};
-let fexData: any = {};
-
-try {
-  termData = JSON.parse(fs.readFileSync(termFile, "utf8"));
-  console.log("Successfully loaded Term data");
-} catch (error) {
-  console.error("Error loading term data:", error);
-}
-
-try {
-  fexData = JSON.parse(fs.readFileSync(fexFile, "utf8"));
-  console.log("Successfully loaded FEX data");
-} catch (error) {
-  console.error("Error loading fex data:", error);
-}
+import { Request, Response } from "express";
+import { db, timedQuery, explainQuery, executeFastQuery } from "../db";
+import { performance } from 'perf_hooks';
 
 interface QuoteRequest {
-  faceAmount: number;
-  age: number;     // Using age directly instead of birthday
+  faceAmount: number | string;
+  face_amount: number | string;
+  age: number;
+  sex: string;
   gender: string;
   tobacco: string;
   termLength?: string;
+  term_length?: string;
   underwritingClass?: string;
+  uw_class?: string;
   state: string;
-  quoteType: "term" | "fex";
+  selected_database: "term" | "fex";
+  quoteType?: "term" | "fex";
   healthConditions: Array<{
     id: string;
     name: string;
     answers: Record<string, string>;
   }>;
+}
+
+interface TransformedQuote {
+  id: number;
+  carrier: string;
+  planName: string;
+  tierName: string;
+  monthlyPremium: number;
+  annualPremium: number;
+  warnings?: string | null;
+  logoUrl?: string | null;
+  eapp?: string | null;
+}
+
+// Helper function to parse face amount and remove commas
+function parseNumeric(value: any): number {
+  if (typeof value === 'number') return value;
+  
+  // If it's a string, remove commas and convert to number
+  if (typeof value === 'string') {
+    return parseInt(value.replace(/,/g, ''), 10);
+  }
+  
+  return 0; // Default fallback
 }
 
 export const getQuotes = async (req: Request, res: Response) => {
+  const overallStart = performance.now();
+  console.log('[QUOTES] Starting quote generation process');
+  
   try {
+    // Dump the raw request body for debugging
+    console.log('[QUOTES] Raw request body:', JSON.stringify(req.body));
+    
+    const parseStart = performance.now();
+    // Normalize field names from different client naming conventions
     const {
-      faceAmount,
-      age, // Using age directly from the request
-      gender,
-      tobacco,
-      termLength,
-      underwritingClass,
-      state,
-      quoteType,
-      healthConditions,
-    } = req.body as QuoteRequest;
-
-    console.log(`Processing quote request: Age=${age}, Gender=${gender}, FaceAmount=${faceAmount}, QuoteType=${quoteType}`);
-    
-    // Determine eligible carriers based on health conditions
-    let eligibleCarriers: string[] = [];
-    
-    if (healthConditions.length === 0) {
-      // If no conditions, all carriers are eligible
-      eligibleCarriers = getAllCarrierNames(quoteType);
-    } else {
-      // Process health conditions to determine eligible carriers
-      const conditionResults = processHealthConditions(healthConditions, quoteType);
-      eligibleCarriers = conditionResults;
-    }
-    
-    // Get carrier preferences from headers
-    const carrierPreferences = req.headers["x-carrier-preferences"] 
-      ? JSON.parse(req.headers["x-carrier-preferences"] as string)
-      : null;
-
-    // Get all carrier names from the JSON data directly, like in the original app.py
-    if (quoteType === "term") {
-      console.log(`Loading all carriers from Term JSON data`);
-      const allTermCarriers = new Set<string>();
-      
-      // Collect all unique carrier names from the Term JSON data
-      if (termData?.Term?.Conditions) {
-        Object.values(termData.Term.Conditions).forEach((condition: any) => {
-          if (condition.finalResults) {
-            condition.finalResults.forEach((finalResult: any) => {
-              if (finalResult.underwriting) {
-                finalResult.underwriting.forEach((uw: any) => {
-                  if (uw.company) allTermCarriers.add(uw.company);
-                });
-              }
-            });
-          }
-        });
-      }
-      
-      // Use all carriers from the term data without filtering
-      eligibleCarriers = Array.from(allTermCarriers);
-      console.log(`Found ${eligibleCarriers.length} TERM carriers:`, eligibleCarriers);
-    } else {
-      console.log(`Loading all carriers from FEX JSON data`);
-      const allFexCarriers = new Set<string>();
-      
-      // Collect all unique carrier names from the FEX JSON data
-      if (fexData?.FEX?.Conditions) {
-        Object.values(fexData.FEX.Conditions).forEach((condition: any) => {
-          if (condition.finalResults) {
-            condition.finalResults.forEach((finalResult: any) => {
-              if (finalResult.underwriting) {
-                finalResult.underwriting.forEach((uw: any) => {
-                  if (uw.company) allFexCarriers.add(uw.company);
-                });
-              }
-            });
-          }
-        });
-      }
-      
-      // Use all carriers from the FEX data without filtering
-      eligibleCarriers = Array.from(allFexCarriers);
-      console.log(`Found ${eligibleCarriers.length} FEX carriers:`, eligibleCarriers);
-    }
-    
-    console.log(`Using all ${eligibleCarriers.length} carriers for ${quoteType} quotes`);
-
-    // Get quotes from the JSON data for eligible carriers
-    const quotes = getQuotesFromJson({
-      quoteType,
-      eligibleCarriers,
-      faceAmount,
       age,
-      gender,
+      sex,
+      gender, // Some clients might send gender instead of sex
+      faceAmount,
+      face_amount,
+      selected_database,
+      quoteType,
       tobacco,
       termLength,
+      term_length,
       underwritingClass,
-      state,
-      healthConditions
+      uw_class,
+      state = "Texas" // Default to Texas if not provided
+    } = req.body;
+
+    // Normalize all fields - Log all values for debugging
+    console.log('[QUOTES] Input values:', {
+      age, sex, gender, faceAmount, face_amount, 
+      selected_database, quoteType, tobacco, 
+      termLength, term_length, underwritingClass, uw_class, state
     });
 
-    res.json(quotes);
+    // Use exact values for sex/gender that match the database - always "Male" or "Female"
+    let normalizedSex = 'Male'; // Default
+    if (sex === 'Female' || gender === 'Female') {
+      normalizedSex = 'Female';
+    } else if (sex === 'Male' || gender === 'Male') {
+      normalizedSex = 'Male';
+    }
+    
+    // Parse face amount
+    const normalizedFaceAmount = parseNumeric(faceAmount || face_amount);
+    
+    // Database type
+    const normalizedDatabase = selected_database || quoteType || 'term';
+    
+    // State - providing default value of Texas from the sample data
+    const normalizedState = state || "Texas";
+
+    // Age value
+    const normalizedAge = Number(age) || 35; // Default to 35 if age not provided
+
+    // Term length - make sure it's a string like "10", "20", etc.
+    const normalizedTermLength = String(termLength || term_length || '20'); // Default to 20 if term length not provided
+    
+    // UW class
+    const normalizedUwClass = underwritingClass || uw_class || 'level';
+    
+    // Use exact tobacco values that match the database - "None" or "Cigarettes"
+    let normalizedTobacco = 'None'; // Default
+    if (tobacco === 'Cigarettes') {
+      normalizedTobacco = 'Cigarettes';
+    }
+
+    const parseEnd = performance.now();
+    console.log('[QUOTES] Parameter normalization completed in', (parseEnd - parseStart).toFixed(2), 'ms');
+    console.log('[QUOTES] Normalized values:', {
+      age: normalizedAge,
+      sex: normalizedSex,
+      faceAmount: normalizedFaceAmount,
+      selected_database: normalizedDatabase,
+      tobacco: normalizedTobacco,
+      termLength: normalizedTermLength,
+      state: normalizedState,
+      underwritingClass: normalizedUwClass
+    });
+    
+    const queryBuildStart = performance.now();
+    let query;
+    let params;
+    
+    // Stick closely to the original Python app's query format and match the sample data
+    if (normalizedDatabase === 'term') {
+      query = `
+        SELECT id, face_amount, sex, term_length, state, age, tobacco,
+               company, plan_name, tier_name, monthly_rate, annual_rate,
+               warnings, logo_url, eapp
+        FROM term
+        WHERE face_amount = $1
+        AND sex = $2
+        AND age = $3
+        AND tobacco = $4
+        AND term_length = $5
+        ORDER BY monthly_rate ASC
+      `;
+      params = [normalizedFaceAmount, normalizedSex, normalizedAge, normalizedTobacco, normalizedTermLength];
+    } else {
+      query = `
+        SELECT id, face_amount, sex, state, age, tobacco, underwriting_class,
+               company, plan_name, tier_name, monthly_rate, annual_rate,
+               warnings, logo_url, eapp
+        FROM fex
+        WHERE face_amount = $1
+        AND sex = $2
+        AND age = $3
+        AND tobacco = $4
+        AND underwriting_class = $5
+        ORDER BY monthly_rate ASC
+      `;
+      params = [normalizedFaceAmount, normalizedSex, normalizedAge, normalizedTobacco, normalizedUwClass];
+    }
+    
+    const queryBuildEnd = performance.now();
+    console.log('[QUOTES] Query built in', (queryBuildEnd - queryBuildStart).toFixed(2), 'ms');
+    console.log(`[QUOTES] Query: ${query}`);
+    console.log(`[QUOTES] Params: ${JSON.stringify(params)}`);
+    
+    // Run an EXPLAIN ANALYZE before actual execution to diagnose performance issues
+    try {
+      console.log('[QUOTES] Running query analysis...');
+      const explainStart = performance.now();
+      await explainQuery(query, params);
+      const explainEnd = performance.now();
+      console.log(`[QUOTES] Query analysis took ${(explainEnd - explainStart).toFixed(2)}ms`);
+    } catch (explainError) {
+      console.error('[QUOTES] Error during query analysis:', explainError);
+    }
+    
+    // Use the dedicated connection for query execution
+    console.log('[QUOTES] Executing actual query with dedicated connection...');
+    const queryExecStart = performance.now();
+    const queryResult = await executeFastQuery(query, params);
+    const queryExecEnd = performance.now();
+    console.log(`[QUOTES] Total query execution time: ${(queryExecEnd - queryExecStart).toFixed(2)}ms`);
+    
+    const transformStart = performance.now();
+    // Add detailed logging before transformation
+    console.log('[QUOTES] First row raw structure:', queryResult.rows[0] ? Object.keys(queryResult.rows[0]) : 'No results');
+    if (queryResult.rows[0]) {
+      console.log(`[QUOTES] Sample row values (${normalizedDatabase}):`, {
+        id: queryResult.rows[0].id,
+        company: queryResult.rows[0].company,
+        monthly_rate: queryResult.rows[0].monthly_rate,
+        annual_rate: queryResult.rows[0].annual_rate
+      });
+    }
+    
+    // Map database field names to what the front-end expects
+    const transformedQuotes: TransformedQuote[] = queryResult.rows.map((quote) => ({
+      id: quote.id,
+      carrier: quote.company,
+      planName: quote.plan_name,
+      tierName: quote.tier_name,
+      monthlyPremium: Number(quote.monthly_rate),
+      annualPremium: Number(quote.annual_rate),
+      warnings: quote.warnings,
+      logoUrl: quote.logo_url,
+      eapp: quote.eapp
+    }));
+    
+    // Add detailed logging after transformation
+    console.log('[QUOTES] First transformed quote structure:', transformedQuotes[0] ? Object.keys(transformedQuotes[0]) : 'No results');
+    if (transformedQuotes[0]) {
+      console.log('[QUOTES] Sample transformed values:', {
+        id: transformedQuotes[0].id,
+        carrier: transformedQuotes[0].carrier,
+        monthlyPremium: transformedQuotes[0].monthlyPremium,
+        annualPremium: transformedQuotes[0].annualPremium
+      });
+    }
+    
+    const transformEnd = performance.now();
+    console.log('[QUOTES] Transformed', transformedQuotes.length, 'quotes in', 
+      (transformEnd - transformStart).toFixed(2), 'ms');
+    
+    const overallEnd = performance.now();
+    console.log('[QUOTES] Total quote generation time:', (overallEnd - overallStart).toFixed(2), 'ms');
+    
+    res.json(transformedQuotes);
   } catch (error) {
-    console.error("Error generating quotes:", error);
-    res.status(500).json({ error: "Failed to generate quotes" });
+    const failEnd = performance.now();
+    console.error('[QUOTES] Error generating quotes:', error);
+    console.error('[QUOTES] Failed after', (failEnd - overallStart).toFixed(2), 'ms');
+    res.status(500).json({ error: 'Failed to generate quotes' });
   }
 };
-
-function getAllCarrierNames(quoteType: "term" | "fex"): string[] {
-  // Return all carrier names based on quote type
-  if (quoteType === "term") {
-    const allCarriers = new Set<string>();
-    Object.values(termData.Term.Conditions).forEach((condition: any) => {
-      condition.finalResults.forEach((finalResult: any) => {
-        finalResult.underwriting.forEach((uw: any) => {
-          allCarriers.add(uw.company);
-        });
-      });
-    });
-    return Array.from(allCarriers);
-  } else {
-    const allCarriers = new Set<string>();
-    Object.values(fexData.FEX.Conditions).forEach((condition: any) => {
-      condition.finalResults.forEach((finalResult: any) => {
-        finalResult.underwriting.forEach((uw: any) => {
-          allCarriers.add(uw.company);
-        });
-      });
-    });
-    return Array.from(allCarriers);
-  }
-}
-
-function processHealthConditions(
-  healthConditions: Array<{
-    id: string;
-    name: string;
-    answers: Record<string, string>;
-  }>,
-  quoteType: "term" | "fex"
-): string[] {
-  // Process health conditions to determine eligible carriers
-  const data = quoteType === "term" ? termData.Term.Conditions : fexData.FEX.Conditions;
-  
-  const eligibleCarriers = new Set<string>();
-  const ineligibleCarriers = new Set<string>();
-  
-  healthConditions.forEach(condition => {
-    const conditionData = data[condition.name];
-    if (!conditionData) return;
-    
-    // Find which final result this condition leads to based on answers
-    let currentQuestionId = conditionData.questions[0].id;
-    let finalResultId = "";
-    
-    // Trace through the questions and answers to find the final result
-    while (!finalResultId.startsWith("final")) {
-      const question = conditionData.questions.find((q: any) => q.id === currentQuestionId);
-      if (!question) break;
-      
-      const answer = question.answers.find(
-        (a: any) => a.value === condition.answers[question.id]
-      );
-      
-      if (!answer) break;
-      finalResultId = answer.nextQuestionId;
-      
-      if (!finalResultId.startsWith("final")) {
-        currentQuestionId = finalResultId;
-      }
-    }
-    
-    if (finalResultId.startsWith("final")) {
-      const finalResult = conditionData.finalResults.find((fr: any) => fr.id === finalResultId);
-      if (finalResult) {
-        finalResult.underwriting.forEach((uw: any) => {
-          if (uw.status === "Approved") {
-            eligibleCarriers.add(uw.company);
-          } else if (uw.status === "Decline") {
-            ineligibleCarriers.add(uw.company);
-          }
-        });
-      }
-    }
-  });
-  
-  // Remove any carrier that is ineligible from any condition
-  return Array.from(eligibleCarriers).filter(carrier => !ineligibleCarriers.has(carrier));
-}
-
-function getQuotesFromJson({
-  quoteType,
-  eligibleCarriers,
-  faceAmount,
-  age,
-  gender,
-  tobacco,
-  termLength,
-  underwritingClass,
-  state,
-  healthConditions
-}: {
-  quoteType: "term" | "fex";
-  eligibleCarriers: string[];
-  faceAmount: number;
-  age: number;
-  gender: string;
-  tobacco: string;
-  termLength?: string;
-  underwritingClass?: string;
-  state: string;
-  healthConditions: Array<{
-    id: string;
-    name: string;
-    answers: Record<string, string>;
-  }>;
-}) {
-  console.log(`Getting quotes from JSON: QuoteType=${quoteType}, Age=${age}, Carriers=${eligibleCarriers.length}`);
-  
-  // In a real implementation, we would be making database queries similar to how it's done in app.py
-  // Since we don't have access to the databases in this environment, we need to simulate quotes
-  
-  // Create realistic quotes for a 69-year old male with 100k coverage
-  // These numbers are based on industry standards for the given parameters
-  const quotes = [];
-  
-  // In production, we'd use an actual database query to get quotes like in app.py:
-  // SELECT company, plan_name, tier_name, monthly_rate, annual_rate, warnings, ...
-  // FROM term_quotes
-  // WHERE face_amount = $faceAmount AND sex = $gender AND age = $age ...
-  
-  // Generate realistic quotes for the selected carriers
-  for (const carrier of eligibleCarriers) {
-    let monthlyRate = 0;
-    let tierName = "";
-    let planName = "";
-    let benefits = [];
-    
-    if (quoteType === "term") {
-      // Calculate realistic term rates based on age, gender, tobacco, etc.
-      if (age <= 30) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.16 : 0.14);
-      } else if (age <= 40) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.22 : 0.18);
-      } else if (age <= 50) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.42 : 0.36);
-      } else if (age <= 60) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.96 : 0.75);
-      } else if (age <= 65) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 1.75 : 1.36);
-      } else if (age <= 70) {
-        // This should give close to $200/month for 69-year-old male with 100k coverage
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 2.40 : 1.90);
-      } else {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 3.5 : 2.8);
-      }
-      
-      // Adjust for term length
-      if (termLength) {
-        const termYears = parseInt(termLength);
-        const termFactor = termYears <= 10 ? 0.7 : 
-                           termYears <= 15 ? 0.85 : 
-                           termYears <= 20 ? 1.0 : 
-                           termYears <= 25 ? 1.3 : 1.5;
-        monthlyRate *= termFactor;
-      }
-      
-      // Adjust for tobacco use
-      if (tobacco === "yes") {
-        monthlyRate *= 2.2;
-      }
-      
-      // Use a consistent carrier-specific variation based on carrier name
-      const carrierVariation: Record<string, number> = {
-        "Mutual of Omaha (Term Life Express)": 0.85,
-        "Foresters (Your Term)": 0.92,
-        "InstaBrain (Term)": 0.95,
-        "Americo (Payment Protector)": 1.0
-      };
-      
-      // Use consistent variation factor instead of random
-      const variationFactor = carrierVariation[carrier] || 1.0;
-      monthlyRate *= variationFactor;
-      
-      // Create plan name and tier
-      planName = `${carrier} ${termLength}-Year Term`;
-      tierName = tobacco === "yes" ? "Tobacco" : "Preferred";
-      
-      // Use fixed benefits instead of random
-      const carrierBenefits: Record<string, string[]> = {
-        "Mutual of Omaha (Term Life Express)": ["Terminal Illness Rider", "Critical Illness Rider"],
-        "Foresters (Your Term)": ["Terminal Illness Rider", "Critical Illness Rider", "Chronic Illness Rider"],
-        "InstaBrain (Term)": ["Terminal Illness Rider", "Critical Illness Rider"],
-        "Americo (Payment Protector)": ["Terminal Illness Rider"]
-      };
-      
-      benefits = carrierBenefits[carrier] || ["Terminal Illness Rider"];
-    } 
-    else { // FEX quotes
-      // Calculate realistic FEX rates for age
-      if (age <= 50) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.30 : 0.24);
-      } else if (age <= 60) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.50 : 0.40);
-      } else if (age <= 70) {
-        // Should give reasonable rates for senior FEX policies
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 0.85 : 0.70);
-      } else if (age <= 80) {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 1.35 : 1.10);
-      } else {
-        monthlyRate = (faceAmount / 1000) * (gender === "male" ? 2.10 : 1.70);
-      }
-      
-      // Apply underwriting class factors
-      if (underwritingClass) {
-        const uwFactor = underwritingClass === "level" ? 1.0 :
-                        underwritingClass === "graded/modified" ? 1.4 :
-                        underwritingClass === "guaranteed" ? 1.9 : 1.3;
-        monthlyRate *= uwFactor;
-      }
-      
-      // Adjust for tobacco use
-      if (tobacco === "yes") {
-        monthlyRate *= 1.6; // FEX generally has lower tobacco penalties than term
-      }
-      
-      // Use a consistent carrier-specific variation based on carrier name
-      const carrierVariation: Record<string, number> = {
-        "Royal Neighbors": 0.88,
-        "Prosperity Life": 0.94,
-        "Mutual of Omaha": 1.0
-      };
-      
-      // Use consistent variation factor instead of random
-      const variationFactor = carrierVariation[carrier] || 1.0;
-      monthlyRate *= variationFactor;
-      
-      // Create plan name and tier
-      planName = `${carrier} Final Expense`;
-      tierName = underwritingClass === "level" ? "Level Benefit" :
-               underwritingClass === "graded/modified" ? "Graded Benefit" : 
-               underwritingClass === "guaranteed" ? "Guaranteed Issue" : "Limited Pay";
-               
-      // Use fixed benefits instead of random
-      const carrierBenefits: Record<string, string[]> = {
-        "Royal Neighbors": ["Funeral Planning", "Family Support Services"],
-        "Prosperity Life": ["Funeral Planning"],
-        "Mutual of Omaha": ["Funeral Planning", "Family Support Services"]
-      };
-      
-      // Add "No Health Questions" for guaranteed issue
-      benefits = carrierBenefits[carrier] || ["Funeral Planning"];
-      if (underwritingClass === "guaranteed") {
-        benefits.push("No Health Questions");
-      }
-    }
-    
-    // Add to quotes array with rounded values
-    quotes.push({
-      carrier,
-      planName,
-      tierName,
-      monthlyPremium: parseFloat(monthlyRate.toFixed(2)),
-      annualPremium: parseFloat((monthlyRate * 12).toFixed(2)),
-      benefits,
-    });
-  }
-  
-  // Sort quotes by monthly premium (lowest first)
-  quotes.sort((a, b) => a.monthlyPremium - b.monthlyPremium);
-  
-  return quotes;
-}
